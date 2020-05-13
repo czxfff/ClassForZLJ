@@ -5,30 +5,41 @@ import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.ContentResolver;
+import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.MediaStore;
+import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.MediaController;
-import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.VideoView;
 
 import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 public class MainActivity extends Activity implements View.OnClickListener {
 
     private VideoView mVideoView;
     private ImageButton mVideoStart;
     private ImageView mFirstFrame;
+    private String mVideoPath;
     private MediaController mMediaController;
     private static final int REQUEST_EXTERNAL_STORAGE = 1;
+    private static final int CHOSE_VIDEO = 2;
+    private boolean isFirstLaunch = true;
     private static String[] PERMISSIONS_STORAGE = {
             Manifest.permission.READ_EXTERNAL_STORAGE,
             Manifest.permission.WRITE_EXTERNAL_STORAGE
@@ -56,6 +67,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
         mVideoStart = findViewById(R.id.video_start);
         mFirstFrame = findViewById(R.id.first_frame);
         mVideoStart.setOnClickListener(this);
+        mVideoView.setOnClickListener(this);
     }
 
     @Override
@@ -84,13 +96,23 @@ public class MainActivity extends Activity implements View.OnClickListener {
     }
 
     private void initVideoPath() {
-        File file = new File(Environment.getExternalStorageDirectory(), "/czx.mp4");
-        if (file.exists()) {
-            mFirstFrame.setImageBitmap(getLocalVideoBitmap(file.getPath()));
+        File file = null;
+        if (isFirstLaunch) {
+            Uri innerVideoUri = Uri.parse("android.resource://com.czx.testdemo/"+R.raw.demo);
+            mFirstFrame.setImageBitmap(getLocalVideoBitmap(innerVideoUri));
             mFirstFrame.setVisibility(View.VISIBLE);
-            mVideoView.setVideoPath(file.getPath());//设置视频文件
+            mVideoView.setVideoURI(innerVideoUri);
+//            file = new File(Environment.getExternalStorageDirectory(), "/czx.mp4");
+//            mVideoPath = file.getPath();
         } else {
-            Toast.makeText(this, "视频不存在", Toast.LENGTH_SHORT).show();
+            file = new File(mVideoPath);
+            if (file != null && file.exists()) {
+                mFirstFrame.setImageBitmap(getLocalVideoBitmap(file.getPath()));
+                mFirstFrame.setVisibility(View.VISIBLE);
+                mVideoView.setVideoPath(file.getPath());//设置视频文件
+            } else {
+                Toast.makeText(this, "视频不存在", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
@@ -144,12 +166,25 @@ public class MainActivity extends Activity implements View.OnClickListener {
                     mVideoView.start();
                 }
                 break;
-            case 2:
+            case R.id.video_view:
+                if (!mVideoView.isPlaying()) {
+                    openAlbum();
+                }
+                break;
+            default:
                 break;
         }
     }
 
-    public static Bitmap getLocalVideoBitmap(String localPath) {
+    public Bitmap getLocalVideoBitmap(String localPath) {
+        File file = new File(localPath);
+        String[] splitPath = localPath.split("\\.");
+        boolean isJpg = isJpg = "jpg".equals(splitPath[splitPath.length - 1]);
+        if (!file.exists() || isJpg) {
+            Toast.makeText(this, "视频不存在", Toast.LENGTH_SHORT).show();
+            finish();
+            return null;
+        }
         Bitmap bitmap = null;
         MediaMetadataRetriever retriever = new MediaMetadataRetriever();
         try {
@@ -163,6 +198,56 @@ public class MainActivity extends Activity implements View.OnClickListener {
             retriever.release();
         }
         return bitmap;
+    }
+
+    public Bitmap getLocalVideoBitmap(Uri localPath) {
+        Bitmap bitmap = null;
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        try {
+            //根据文件路径获取缩略图
+            retriever.setDataSource(this, localPath);
+            //获得第一帧图片
+            bitmap = retriever.getFrameAtTime();
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        } finally {
+            retriever.release();
+        }
+        return bitmap;
+    }
+
+    public void openAlbum() {
+        Intent intent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Video.Media.EXTERNAL_CONTENT_URI);
+        startActivityForResult(intent, CHOSE_VIDEO);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            case CHOSE_VIDEO:
+                if (data != null && resultCode == RESULT_OK) {
+                    isFirstLaunch = false;
+                    Uri selectedVideo = data.getData();
+                    /** 数据库查询操作。
+                     * 第一个参数 uri：为要查询的数据库+表的名称。
+                     * 第二个参数 projection ： 要查询的列。
+                     * 第三个参数 selection ： 查询的条件，相当于SQL where。
+                     * 第三个参数 selectionArgs ： 查询条件的参数，相当于 ？。
+                     * 第四个参数 sortOrder ： 结果排序。
+                     */
+                    Cursor cursor = getContentResolver().query(selectedVideo,
+                            null, null, null, null);
+                    if (cursor != null) {
+                        cursor.moveToFirst();
+                        mVideoPath = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.DATA));
+                        cursor.close();
+                    }
+                    Log.d("czxtest ", "video path = " + mVideoPath);
+                }
+                break;
+            default:
+                break;
+        }
     }
 
     @Override
