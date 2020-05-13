@@ -1,27 +1,33 @@
 package com.czx.testdemo;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Environment;
-import android.util.Log;
 import android.view.View;
-import android.widget.Button;
+import android.view.Window;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.MediaController;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.VideoView;
 
 import java.io.File;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends Activity implements View.OnClickListener {
 
     private VideoView mVideoView;
-    private Button mVideoBt;
+    private ImageButton mVideoStart;
+    private ImageView mFirstFrame;
+    private MediaController mMediaController;
     private static final int REQUEST_EXTERNAL_STORAGE = 1;
     private static String[] PERMISSIONS_STORAGE = {
             Manifest.permission.READ_EXTERNAL_STORAGE,
@@ -42,27 +48,33 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_NO_TITLE); //无title
+//        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN); //全屏
         setContentView(R.layout.activity_main);
 
         mVideoView = findViewById(R.id.video_view);
-        mVideoBt = findViewById(R.id.video_bt);
-        mVideoBt.setOnClickListener(this);
+        mVideoStart = findViewById(R.id.video_start);
+        mFirstFrame = findViewById(R.id.first_frame);
+        mVideoStart.setOnClickListener(this);
+    }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
         int permission = ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE);
         if (permission != PackageManager.PERMISSION_GRANTED) {
-            // We don't have permission so prompt the user
             ActivityCompat.requestPermissions(MainActivity.this, PERMISSIONS_STORAGE, REQUEST_EXTERNAL_STORAGE);
         } else {
-            initVideoPath();
+            initVideoView();
         }
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         switch (requestCode) {
-            case 1:
-                if (grantResults.length > 0 && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
-                    initVideoPath();
+            case REQUEST_EXTERNAL_STORAGE:
+                if (grantResults.length > 0 && grantResults[grantResults.length - 1] == PackageManager.PERMISSION_GRANTED) {
+                    initVideoView();
                 } else {
                     Toast.makeText(this, "拒绝权限将无法使用程序", Toast.LENGTH_SHORT).show();
                     finish();
@@ -73,25 +85,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void initVideoPath() {
         File file = new File(Environment.getExternalStorageDirectory(), "/czx.mp4");
-        Log.d("czxtest ", "abso path = " + file.getAbsolutePath());
-        Log.d("czxtest ", "normal path = " + file.getPath());
-        if (!file.exists()) {
+        if (file.exists()) {
+            mFirstFrame.setImageBitmap(getLocalVideoBitmap(file.getPath()));
+            mFirstFrame.setVisibility(View.VISIBLE);
+            mVideoView.setVideoPath(file.getPath());//设置视频文件
+        } else {
             Toast.makeText(this, "视频不存在", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
         }
-        mVideoView.setVideoPath(file.getPath());//设置视频文件
-        mVideoView.start();
     }
 
     private void initVideoView() {
-        File file = new File(Environment.getExternalStorageDirectory(), "demo.mp4");
-        if (!file.exists()) {
-            Toast.makeText(this, "视频不存在", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
-        mVideoView.setVideoPath(file.getPath());//设置视频文件
+        initVideoPath();
         mVideoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             @Override
             public void onPrepared(MediaPlayer mp) {
@@ -103,7 +107,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onCompletion(MediaPlayer mp) {
                 //视频播放完成后的回调
-
+                mVideoStart.setVisibility(View.VISIBLE);
+                mFirstFrame.setVisibility(View.VISIBLE);
+                if (mMediaController != null) {
+                    mMediaController.hide();
+                    mMediaController = null;
+                }
             }
         });
         mVideoView.setOnErrorListener(new MediaPlayer.OnErrorListener() {
@@ -126,14 +135,34 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.video_bt:
+            case R.id.video_start:
                 if (!mVideoView.isPlaying()) {
+                    mMediaController = new MediaController(MainActivity.this);
+                    mVideoStart.setVisibility(View.GONE);
+                    mFirstFrame.setVisibility(View.GONE);
+//                    mVideoView.setMediaController(mMediaController);//控制栏
                     mVideoView.start();
                 }
                 break;
             case 2:
                 break;
         }
+    }
+
+    public static Bitmap getLocalVideoBitmap(String localPath) {
+        Bitmap bitmap = null;
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        try {
+            //根据文件路径获取缩略图
+            retriever.setDataSource(localPath);
+            //获得第一帧图片
+            bitmap = retriever.getFrameAtTime();
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        } finally {
+            retriever.release();
+        }
+        return bitmap;
     }
 
     @Override

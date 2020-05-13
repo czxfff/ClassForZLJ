@@ -17,16 +17,23 @@
         <VideoView
             android:id="@+id/video_view"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content" />
 
-        </VideoView>
+        <ImageView
+            android:id="@+id/first_frame"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clickable="false"
+            android:focusable="false"
+            android:scaleType="fitXY"
+            android:visibility="gone" />
 
-        <Button
-            android:id="@+id/video_bt"
+        <ImageButton
+            android:id="@+id/video_start"
             android:layout_width="50dp"
-            android:layout_height="30dp">
-
-        </Button>
+            android:layout_height="50dp"
+            android:layout_gravity="center"
+            android:src="@android:drawable/ic_media_play" />
 
     </FrameLayout>
 
@@ -39,17 +46,18 @@
 
         <ImageView
             android:id="@+id/img1"
+            android:src="@drawable/leaf"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="1">
-
-        </ImageView>
+            android:background="@color/colorImg1"
+            android:layout_weight="1" />
 
         <LinearLayout
             android:id="@+id/text_one"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:paddingLeft="10dp"
             android:orientation="vertical">
 
             <TextView
@@ -57,17 +65,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="0.8"
-                android:text="叶子">
+                android:text="叶子" />
 
-            </TextView>
-
-            <EditText
+            <TextView
                 android:id="@+id/text1_content"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_weight="0.2">
-
-            </EditText>
+                android:text="@string/text1"
+                android:layout_weight="0.2" />
 
         </LinearLayout>
 
@@ -82,17 +87,18 @@
 
         <ImageView
             android:id="@+id/img2"
+            android:src="@drawable/sun"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="1">
-
-        </ImageView>
+            android:background="@color/colorImg2"
+            android:layout_weight="1" />
 
         <LinearLayout
             android:id="@+id/text_two"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:paddingLeft="10dp"
             android:orientation="vertical">
 
             <TextView
@@ -100,17 +106,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:text="一米阳光">
+                android:text="一米阳光" />
 
-            </TextView>
-
-            <EditText
+            <TextView
                 android:id="@+id/text2_content"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_weight="0.2">
-
-            </EditText>
+                android:text="@string/text2"
+                android:layout_weight="0.2" />
 
         </LinearLayout>
 
@@ -125,17 +128,18 @@
 
         <ImageView
             android:id="@+id/img3"
+            android:src="@drawable/summer"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="1">
-
-        </ImageView>
+            android:background="@color/colorImg3"
+            android:layout_weight="1" />
 
         <LinearLayout
             android:id="@+id/text_three"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:paddingLeft="10dp"
             android:orientation="vertical">
 
             <TextView
@@ -143,17 +147,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:text="盛夏">
+                android:text="盛夏" />
 
-            </TextView>
-
-            <EditText
+            <TextView
                 android:id="@+id/text3_content"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_weight="0.2">
-
-            </EditText>
+                android:text="@string/text3"
+                android:layout_weight="0.2" />
 
         </LinearLayout>
 
