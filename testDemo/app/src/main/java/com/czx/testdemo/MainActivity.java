@@ -78,6 +78,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
             ActivityCompat.requestPermissions(MainActivity.this, PERMISSIONS_STORAGE, REQUEST_EXTERNAL_STORAGE);
         } else {
             initVideoView();
+            mVideoStart.setVisibility(View.VISIBLE);
         }
     }
 
